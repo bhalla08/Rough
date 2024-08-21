@@ -192,3 +192,13 @@ If you want to add a link to this new `Region` page in the sidebar, you can modi
 5. **Update `NavMenu.razor`** in `Shared/`.
 
 These steps should help you set up the region functionality in your Blazor project. If the "New" button doesn't add a row or if the table is still empty, ensure that the service and UI are correctly bound, and double-check the initialization logic. Let me know if you encounter any further issues!
+
+
+
+
+
+
+
+
+        new Region { Code = "AM", Name = "Americas", ShortDescription = "Americas", Description = "All countries in the Americas", Status = true },
+        new Region { Code = "EMEA", Name = "Europe", ShortDescription = "Europe, Middle East, and Africa", Description = "Europe, Middle East, and Africa", Status = true }
