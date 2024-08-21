@@ -1,76 +1,194 @@
-It looks like the table is rendering, but the data isn't showing up, and the dialog isn't working as expected. 
+To help you implement the region functionality in your Blazor project using MudBlazor, I'll guide you through the necessary changes in specific files. This includes adding the necessary code to your Blazor components and service classes.
 
-Here are some troubleshooting steps and updates:
+### 1. **Create the `Region` Model Class**
 
-1. **Check Data Binding:**
-   - Ensure that the `RegionService` is properly returning a list of regions. You can add a quick test to see if the `regions` list is being populated correctly:
+**File**: `Models/Region.cs`
 
-   ```razor
-   protected override void OnInitialized()
-   {
-       regions = RegionService.GetAllRegions();
-       Console.WriteLine($"Loaded {regions.Count} regions.");
-   }
-   ```
+```csharp
+namespace TarrWebApp.Models
+{
+    public class Region
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+        public string ShortDescription { get; set; }
+        public string Description { get; set; }
+        public bool Status { get; set; }
+    }
+}
+```
 
-   Run this and check the console output in the browser's developer tools to see if any regions are loaded.
+### 2. **Create the `RegionService` Class**
 
-2. **Ensure Proper Service Injection:**
-   - Make sure that `RegionService` is correctly registered in the `Program.cs` or `Startup.cs` file. It should look something like this:
+**File**: `Services/RegionService.cs`
 
-   ```csharp
-   builder.Services.AddSingleton<RegionService>();
-   ```
+```csharp
+using TarrWebApp.Models;
 
-   This will ensure that the service is available to your component.
+namespace TarrWebApp.Services
+{
+    public class RegionService
+    {
+        private List<Region> regions = new List<Region>();
 
-3. **Dialog Visibility:**
-   - If clicking "New" doesn't open the dialog, double-check that `showDialog` is properly set to `true` when `AddNewRegion()` is called.
+        public List<Region> GetAllRegions()
+        {
+            return regions;
+        }
 
-   You can add a `Console.WriteLine` to ensure that the method is being called:
+        public void AddRegion(Region region)
+        {
+            regions.Add(region);
+        }
 
-   ```razor
-   private void AddNewRegion()
-   {
-       Console.WriteLine("Add New Region clicked");
-       selectedRegion = new Region();
-       showDialog = true;
-   }
-   ```
+        public void UpdateRegion(Region region)
+        {
+            var existingRegion = regions.FirstOrDefault(r => r.Code == region.Code);
+            if (existingRegion != null)
+            {
+                existingRegion.Name = region.Name;
+                existingRegion.ShortDescription = region.ShortDescription;
+                existingRegion.Description = region.Description;
+                existingRegion.Status = region.Status;
+            }
+        }
 
-   Again, check the console output when you click the "New" button.
+        public void DeleteRegion(string code)
+        {
+            var region = regions.FirstOrDefault(r => r.Code == code);
+            if (region != null)
+            {
+                regions.Remove(region);
+            }
+        }
+    }
+}
+```
 
-4. **Dialog Component:**
-   - Ensure the dialog code is correct. Here's a very simple dialog example:
+### 3. **Register the Service**
 
-   ```razor
-   <MudDialog @bind-IsVisible="showDialog">
-       <DialogContent>
-           <MudTextField @bind-Value="selectedRegion.Code" Label="Code" />
-           <MudTextField @bind-Value="selectedRegion.Name" Label="Name" />
-           <MudTextField @bind-Value="selectedRegion.ShortDescription" Label="Short Description" />
-           <MudTextField @bind-Value="selectedRegion.Description" Label="Description" />
-           <MudTextField @bind-Value="selectedRegion.Status" Label="Status" />
-       </DialogContent>
-       <DialogActions>
-           <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveRegion">Save</MudButton>
-           <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelEdit">Cancel</MudButton>
-       </DialogActions>
-   </MudDialog>
-   ```
+**File**: `Program.cs`
 
-   **Note:** This assumes that `MudDialog` is part of MudBlazor. Ensure you have all the necessary using directives at the top of your `.razor` file:
-   
-   ```razor
-   @using MudBlazor
-   @using TarrWebApp.Models
-   @using TarrWebApp.Services
-   ```
+In the `Main` method, register the `RegionService` as a singleton:
 
-5. **Empty Table Issue:**
-   - If the table is still empty, manually check the data source (like in step 1). Ensure that the region objects have values, and the `@context` is binding properly in the `RowTemplate`.
+```csharp
+builder.Services.AddSingleton<RegionService>();
+```
 
-6. **Refresh the UI:**
-   - If you make changes to `regions`, ensure the UI is refreshed properly. You can use `StateHasChanged()` after making changes to ensure the component refreshes.
+### 4. **Create the `RegionComponent` Blazor Component**
 
-Let me know if these changes help, or if the issue persists!
+**File**: `Pages/Region.razor`
+
+```razor
+@page "/region"
+@using TarrWebApp.Models
+@using TarrWebApp.Services
+@inject RegionService RegionService
+
+<MudTable Items="regions" Hover="true" Bordered="true" Striped="true">
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Short Description</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Short Description">@context.ShortDescription</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Status">@context.Status</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => EditRegion(context))">Edit</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteRegion(context.Code))">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddNewRegion">New</MudButton>
+
+<MudDialog @bind-IsVisible="showDialog">
+    <DialogContent>
+        <MudTextField @bind-Value="selectedRegion.Code" Label="Code" />
+        <MudTextField @bind-Value="selectedRegion.Name" Label="Name" />
+        <MudTextField @bind-Value="selectedRegion.ShortDescription" Label="Short Description" />
+        <MudTextField @bind-Value="selectedRegion.Description" Label="Description" />
+        <MudCheckBox @bind-Checked="selectedRegion.Status" Label="Active" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveRegion">Save</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="CancelEdit">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<Region> regions;
+    private Region selectedRegion = new Region();
+    private bool showDialog = false;
+
+    protected override void OnInitialized()
+    {
+        regions = RegionService.GetAllRegions();
+    }
+
+    private void AddNewRegion()
+    {
+        selectedRegion = new Region();
+        showDialog = true;
+    }
+
+    private void EditRegion(Region region)
+    {
+        selectedRegion = region;
+        showDialog = true;
+    }
+
+    private void SaveRegion()
+    {
+        if (regions.Contains(selectedRegion))
+        {
+            RegionService.UpdateRegion(selectedRegion);
+        }
+        else
+        {
+            RegionService.AddRegion(selectedRegion);
+        }
+        showDialog = false;
+        StateHasChanged();
+    }
+
+    private void DeleteRegion(string code)
+    {
+        RegionService.DeleteRegion(code);
+        regions = RegionService.GetAllRegions(); // Refresh the list
+        StateHasChanged();
+    }
+
+    private void CancelEdit()
+    {
+        showDialog = false;
+    }
+}
+```
+
+### 5. **Update the Navigation**
+
+If you want to add a link to this new `Region` page in the sidebar, you can modify your `NavMenu.razor` file.
+
+**File**: `Shared/NavMenu.razor`
+
+```razor
+<MudNavLink Href="/region" Icon="@Icons.Material.Filled.Map">Region</MudNavLink>
+```
+
+### Summary of Files to Update:
+
+1. **Create `Region.cs`** in `Models/`.
+2. **Create `RegionService.cs`** in `Services/`.
+3. **Register `RegionService`** in `Program.cs`.
+4. **Create `Region.razor`** in `Pages/`.
+5. **Update `NavMenu.razor`** in `Shared/`.
+
+These steps should help you set up the region functionality in your Blazor project. If the "New" button doesn't add a row or if the table is still empty, ensure that the service and UI are correctly bound, and double-check the initialization logic. Let me know if you encounter any further issues!
