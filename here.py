@@ -1,85 +1,3 @@
-To help you implement the region functionality in your Blazor project using MudBlazor, I'll guide you through the necessary changes in specific files. This includes adding the necessary code to your Blazor components and service classes.
-
-### 1. **Create the `Region` Model Class**
-
-**File**: `Models/Region.cs`
-
-```csharp
-namespace TarrWebApp.Models
-{
-    public class Region
-    {
-        public string Code { get; set; }
-        public string Name { get; set; }
-        public string ShortDescription { get; set; }
-        public string Description { get; set; }
-        public bool Status { get; set; }
-    }
-}
-```
-
-### 2. **Create the `RegionService` Class**
-
-**File**: `Services/RegionService.cs`
-
-```csharp
-using TarrWebApp.Models;
-
-namespace TarrWebApp.Services
-{
-    public class RegionService
-    {
-        private List<Region> regions = new List<Region>();
-
-        public List<Region> GetAllRegions()
-        {
-            return regions;
-        }
-
-        public void AddRegion(Region region)
-        {
-            regions.Add(region);
-        }
-
-        public void UpdateRegion(Region region)
-        {
-            var existingRegion = regions.FirstOrDefault(r => r.Code == region.Code);
-            if (existingRegion != null)
-            {
-                existingRegion.Name = region.Name;
-                existingRegion.ShortDescription = region.ShortDescription;
-                existingRegion.Description = region.Description;
-                existingRegion.Status = region.Status;
-            }
-        }
-
-        public void DeleteRegion(string code)
-        {
-            var region = regions.FirstOrDefault(r => r.Code == code);
-            if (region != null)
-            {
-                regions.Remove(region);
-            }
-        }
-    }
-}
-```
-
-### 3. **Register the Service**
-
-**File**: `Program.cs`
-
-In the `Main` method, register the `RegionService` as a singleton:
-
-```csharp
-builder.Services.AddSingleton<RegionService>();
-```
-
-### 4. **Create the `RegionComponent` Blazor Component**
-
-**File**: `Pages/Region.razor`
-
-```razor
 @page "/region"
 @using TarrWebApp.Models
 @using TarrWebApp.Services
@@ -124,25 +42,21 @@ builder.Services.AddSingleton<RegionService>();
 </MudDialog>
 
 @code {
-    private List<Region> regions;
+    private List<Region> regions = new List<Region>();
     private Region selectedRegion = new Region();
     private bool showDialog = false;
 
     protected override void OnInitialized()
     {
+        // Populate the regions list from the service
         regions = RegionService.GetAllRegions();
+        Console.WriteLine($"Initialized with {regions.Count} regions."); // Debugging
     }
 
     private void AddNewRegion()
     {
-        selectedRegion = new Region();
-        showDialog = true;
-    }
-
-    private void EditRegion(Region region)
-    {
-        selectedRegion = region;
-        showDialog = true;
+        selectedRegion = new Region(); // Create a new empty region
+        showDialog = true; // Show the dialog for adding a new region
     }
 
     private void SaveRegion()
@@ -154,51 +68,22 @@ builder.Services.AddSingleton<RegionService>();
         else
         {
             RegionService.AddRegion(selectedRegion);
+            regions.Add(selectedRegion); // Add the new region to the list
         }
-        showDialog = false;
-        StateHasChanged();
+
+        showDialog = false; // Close the dialog
+        StateHasChanged(); // Refresh the UI
     }
 
     private void DeleteRegion(string code)
     {
         RegionService.DeleteRegion(code);
         regions = RegionService.GetAllRegions(); // Refresh the list
-        StateHasChanged();
+        StateHasChanged(); // Refresh the UI
     }
 
     private void CancelEdit()
     {
-        showDialog = false;
+        showDialog = false; // Close the dialog without saving
     }
 }
-```
-
-### 5. **Update the Navigation**
-
-If you want to add a link to this new `Region` page in the sidebar, you can modify your `NavMenu.razor` file.
-
-**File**: `Shared/NavMenu.razor`
-
-```razor
-<MudNavLink Href="/region" Icon="@Icons.Material.Filled.Map">Region</MudNavLink>
-```
-
-### Summary of Files to Update:
-
-1. **Create `Region.cs`** in `Models/`.
-2. **Create `RegionService.cs`** in `Services/`.
-3. **Register `RegionService`** in `Program.cs`.
-4. **Create `Region.razor`** in `Pages/`.
-5. **Update `NavMenu.razor`** in `Shared/`.
-
-These steps should help you set up the region functionality in your Blazor project. If the "New" button doesn't add a row or if the table is still empty, ensure that the service and UI are correctly bound, and double-check the initialization logic. Let me know if you encounter any further issues!
-
-
-
-
-
-
-
-
-        new Region { Code = "AM", Name = "Americas", ShortDescription = "Americas", Description = "All countries in the Americas", Status = true },
-        new Region { Code = "EMEA", Name = "Europe", ShortDescription = "Europe, Middle East, and Africa", Description = "Europe, Middle East, and Africa", Status = true }
