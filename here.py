@@ -1,13 +1,3 @@
-If the table is now showing values but the "New" and "Edit" buttons aren't opening the dialog box, it likely means there's an issue with how the dialog box (`MudDialog`) is being managed or displayed. Below is a refined approach to ensure that the dialog box opens when the "New" or "Edit" buttons are clicked.
-
-### Updated Code
-
-**1. Update the Region Page Component**
-
-Here's an updated version of the `Region` page component. It uses `MudDialogService` to manage the dialog box, which is a more standard approach with MudBlazor.
-
-#### `Region.razor`
-```razor
 @page "/region"
 @using TarrWebApp.Models
 @using TarrWebApp.Services
@@ -83,60 +73,3 @@ Here's an updated version of the `Region` page component. It uses `MudDialogServ
         StateHasChanged(); // Refresh the UI
     }
 }
-```
-
-**2. Create the Dialog Component**
-
-You'll need a new Razor component for the dialog that will handle adding and editing regions.
-
-#### `RegionDialog.razor`
-```razor
-@using MudBlazor
-@code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    [Parameter] public Region Region { get; set; }
-
-    private void Save()
-    {
-        MudDialog.Close(DialogResult.Ok(Region));
-    }
-
-    private void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-}
-
-<MudDialog>
-    <DialogContent>
-        <MudTextField @bind-Value="Region.Code" Label="Code" Required="true" />
-        <MudTextField @bind-Value="Region.Name" Label="Name" Required="true" />
-        <MudTextField @bind-Value="Region.ShortDescription" Label="Short Description" />
-        <MudTextField @bind-Value="Region.Description" Label="Description" />
-        <MudCheckBox @bind-Checked="Region.Status" Label="Active" />
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
-        <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
-    </DialogActions>
-</MudDialog>
-```
-
-**3. Register the `MudDialogService`**
-
-Ensure that `MudDialogService` is registered in the dependency injection container. You can do this in your `Program.cs` or `Startup.cs` file depending on your Blazor project setup:
-
-```csharp
-builder.Services.AddMudServices();
-```
-
-### Explanation
-- **MudDialogService**: This service provides a more reliable way to handle dialogs in MudBlazor.
-- **RegionDialog**: This is a dedicated dialog component where you can enter or edit region details.
-- **Dialog Parameters**: This allows you to pass the region object to the dialog and receive it back when the dialog is closed.
-
-### Common Issues
-- **Dialog Not Opening**: Ensure that `MudBlazor.DialogService` is correctly injected and that the `RegionDialog` component exists in your project.
-- **UI Not Updating**: Ensure `StateHasChanged()` is called after modifying the list of regions to force the UI to refresh.
-
-By following this approach, your "New" and "Edit" buttons should now open the dialog, allowing you to add or edit regions.
