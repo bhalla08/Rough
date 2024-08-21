@@ -42,7 +42,8 @@
         var dialog = DialogService.Show<RegionDialog>("Add New Region", parameters);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
+        // Check if result is not null and contains data
+        if (result != null && result.Data != null)
         {
             var newRegion = (Region)result.Data;
             RegionService.AddRegion(newRegion);
@@ -57,7 +58,8 @@
         var dialog = DialogService.Show<RegionDialog>("Edit Region", parameters);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
+        // Check if result is not null and contains data
+        if (result != null && result.Data != null)
         {
             var updatedRegion = (Region)result.Data;
             RegionService.UpdateRegion(updatedRegion);
