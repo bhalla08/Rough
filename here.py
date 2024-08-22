@@ -1,80 +1,42 @@
-To make the `Code` field read-only when editing a region, you can modify your edit dialog to disable the `Code` input field based on whether the dialog is in edit mode or not. Here's how you can do it:
+import os
+import pyodbc
+from openai import AzureOpenAI
 
-### Step 1: Modify the Edit Dialog Component
 
-Assume you have an `EditRegionDialog.razor` file where you handle the editing of the region. You can pass a parameter to indicate whether the dialog is for editing or adding a new region.
+server = 'tasqlserver12345.database.windows.net'
+database = 'Techarmy DB'
+username = 'hackathon_user'
+password = 'Techarmy@123!'
+driver = '{ODBC Driver 17 for SQL Server}'
 
-#### **EditRegionDialog.razor**
-```razor
-@inject MudBlazor.IDialogService DialogService
 
-<MudDialog>
-    <DialogContent>
-        <MudText Typo="Typo.h6">@DialogTitle</MudText>
 
-        <MudTextField @bind-Value="Region.Code" Label="Code" Disabled="@IsEditMode" Required="true" />
-        <MudTextField @bind-Value="Region.Name" Label="Name" Required="true" />
-        <MudTextField @bind-Value="Region.ShortDescription" Label="Short Description" />
-        <MudTextField @bind-Value="Region.Description" Label="Description" />
-        <MudCheckBox @bind-Checked="Region.Status" Label="Status" />
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Save" Color="Color.Primary">Save</MudButton>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-    </DialogActions>
-</MudDialog>
+client = AzureOpenAI(
+    api_key="b7c3314e81ac4fc191e5bb5f4aa957ee",  
+    api_version="2024-05-01-preview",
+    azure_endpoint="https://hackathon0000.openai.azure.com/"
+)
 
-@code {
-    [CascadingParameter] MudBlazor.MudDialogInstance MudDialog { get; set; }
-    [Parameter] public Region Region { get; set; }
-    [Parameter] public bool IsEditMode { get; set; } // New parameter to indicate edit mode
+deployment_name = 'Test'  
 
-    private string DialogTitle => IsEditMode ? "Edit Region" : "Add New Region";
 
-    private void Save()
-    {
-        if (string.IsNullOrWhiteSpace(Region.Code) || string.IsNullOrWhiteSpace(Region.Name))
-        {
-            // Show error message or validation
-            return;
-        }
+system_message = "You are an expert in generating SQL queries from natural language."
+start_phrase = "print all the rows from Sports table where the size of the team is 7"
 
-        MudDialog.Close(DialogResult.Ok(Region));
-    }
+# Combine the system message with the user input
+full_prompt = f"{system_message}\nUser: {start_phrase}\nSQL Query:"
 
-    private void Cancel()
-    {
-        MudDialog.Close(DialogResult.Cancel());
-    }
-}
-```
+# Send a test completion job with adjusted settings
+response = client.completions.create(
+    model=deployment_name,
+    prompt=full_prompt,
+    max_tokens=50,           
+    temperature=0.2,         
+    stop=[";", "\n"],        
+    frequency_penalty=0.0,   
+    presence_penalty=0.6     
+)
 
-### Step 2: Update the Edit Method in `RegionItemComponent.razor.cs`
 
-Update your edit method to pass the `IsEditMode` parameter when opening the edit dialog.
-
-#### **RegionItemComponent.razor.cs**
-```csharp
-public async Task EditRegion(Region region)
-{
-    var parameters = new DialogParameters
-    {
-        ["Region"] = region,
-        ["IsEditMode"] = true // Set to true when editing
-    };
-    var dialog = DialogService.Show<EditRegionDialog>("Edit Region", parameters);
-    var result = await dialog.Result;
-
-    if (!result.Cancelled)
-    {
-        // Save changes
-        regions = RegionService.GetAllRegions(); // Refresh the list
-        StateHasChanged(); // Refresh the UI
-    }
-}
-```
-
-### Summary
-
-- The `Code` field will be disabled (read-only) when editing a region, making it unchangeable.
-- The `IsEditMode` parameter determines whether the dialog is in "edit" or "add" mode, which controls the behavior of the `Code` field.
+print('Input - '+start_phrase )
+print('Output - '+response.choices[0].text)
