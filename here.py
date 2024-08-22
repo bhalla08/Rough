@@ -1,72 +1,80 @@
-To add a confirmation dialog when clicking the delete button in your Blazor project, you can use the `MudDialogService` to show a confirmation dialog. If the user confirms the action, then the row will be deleted.
+To make the `Code` field read-only when editing a region, you can modify your edit dialog to disable the `Code` input field based on whether the dialog is in edit mode or not. Here's how you can do it:
 
-Here’s how you can implement this:
+### Step 1: Modify the Edit Dialog Component
 
-### Step 1: Create a Confirmation Dialog Component
+Assume you have an `EditRegionDialog.razor` file where you handle the editing of the region. You can pass a parameter to indicate whether the dialog is for editing or adding a new region.
 
-First, create a component that will serve as the confirmation dialog.
-
-#### **DeleteConfirmationDialog.razor**
+#### **EditRegionDialog.razor**
 ```razor
 @inject MudBlazor.IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Are you sure you want to delete this record?</MudText>
+        <MudText Typo="Typo.h6">@DialogTitle</MudText>
+
+        <MudTextField @bind-Value="Region.Code" Label="Code" Disabled="@IsEditMode" Required="true" />
+        <MudTextField @bind-Value="Region.Name" Label="Name" Required="true" />
+        <MudTextField @bind-Value="Region.ShortDescription" Label="Short Description" />
+        <MudTextField @bind-Value="Region.Description" Label="Description" />
+        <MudCheckBox @bind-Checked="Region.Status" Label="Status" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => MudDialog.Close(DialogResult.Ok(true))" Color="Color.Error">OK</MudButton>
-        <MudButton OnClick="() => MudDialog.Close(DialogResult.Cancel())">Cancel</MudButton>
+        <MudButton OnClick="Save" Color="Color.Primary">Save</MudButton>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] MudBlazor.MudDialogInstance MudDialog { get; set; }
+    [Parameter] public Region Region { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } // New parameter to indicate edit mode
+
+    private string DialogTitle => IsEditMode ? "Edit Region" : "Add New Region";
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Region.Code) || string.IsNullOrWhiteSpace(Region.Name))
+        {
+            // Show error message or validation
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(Region));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close(DialogResult.Cancel());
+    }
 }
 ```
 
-### Step 2: Modify the Delete Method in `RegionItemComponent.razor.cs`
+### Step 2: Update the Edit Method in `RegionItemComponent.razor.cs`
 
-Now, update your delete method to show the confirmation dialog before performing the delete operation.
+Update your edit method to pass the `IsEditMode` parameter when opening the edit dialog.
 
 #### **RegionItemComponent.razor.cs**
 ```csharp
-public async Task DeleteRegion(Region region)
+public async Task EditRegion(Region region)
 {
-    var parameters = new DialogParameters();
-    var dialog = DialogService.Show<DeleteConfirmationDialog>("Delete Confirmation", parameters);
+    var parameters = new DialogParameters
+    {
+        ["Region"] = region,
+        ["IsEditMode"] = true // Set to true when editing
+    };
+    var dialog = DialogService.Show<EditRegionDialog>("Edit Region", parameters);
     var result = await dialog.Result;
 
     if (!result.Cancelled)
     {
-        // Proceed with delete operation
-        RegionService.DeleteRegion(region); // Assumes you have a delete method in your service
+        // Save changes
         regions = RegionService.GetAllRegions(); // Refresh the list
         StateHasChanged(); // Refresh the UI
     }
 }
 ```
 
-### Step 3: Update the Delete Button in `RegionItemComponent.razor`
-
-Update the delete button to call the `DeleteRegion` method when clicked.
-
-#### **RegionItemComponent.razor**
-```razor
-<MudTable Items="@regions">
-    <!-- Other columns -->
-    <Column>
-        <MudButton Color="Color.Error" OnClick="@(() => DeleteRegion(region))">
-            Delete
-        </MudButton>
-    </Column>
-</MudTable>
-```
-
 ### Summary
 
-This setup will:
-
-- Show a confirmation dialog when the user clicks the "Delete" button.
-- If the user confirms by clicking "OK", the selected region will be deleted.
-- If the user cancels, the delete operation will not proceed.
+- The `Code` field will be disabled (read-only) when editing a region, making it unchangeable.
+- The `IsEditMode` parameter determines whether the dialog is in "edit" or "add" mode, which controls the behavior of the `Code` field.
