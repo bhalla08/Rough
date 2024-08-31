@@ -1,3 +1,6 @@
+1. Modify the RegionDialog.razor File
+razor
+Copy code
 @code {
     private RegionModel TempRegion { get; set; }
     private bool IsSaveDisabled => string.IsNullOrWhiteSpace(TempRegion.Code) || string.IsNullOrWhiteSpace(TempRegion.Name);
@@ -53,3 +56,15 @@
         </MudButton>
     </DialogActions>
 </MudDialog>
+Explanation:
+Cloning for Safe Editing:
+
+When the dialog is opened, the original Region is cloned into a temporary object TempRegion.
+This ensures that any changes made while editing are stored in TempRegion and not immediately reflected in the original Region.
+Save Logic:
+
+If the user clicks "Save," the changes from TempRegion are committed back to the original Region.
+Cancel Logic:
+
+If the user clicks "Cancel," the changes are discarded since Region remains unchanged.
+This approach will ensure that your edits are only saved when the "Save" button is clicked, and any changes are discarded if "Cancel" is clicked.      
