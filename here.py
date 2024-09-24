@@ -1,43 +1,27 @@
-protected override void OnParametersSet()
+private async Task AddNewRegion()
 {
-    // Check if we're in edit mode or adding a new region
-    if (IsEditMode)
+    var parameters = new DialogParameters { ["Region"] = new Region() };
+    var dialog = DialogService.Show<RegionDialog>("Add New Region", parameters);
+    var result = await dialog.Result;
+
+    // Check if result is not null and contains data
+    if (result != null && !result.Canceled)
     {
-        // Editing existing region, so populate TempRegion with existing values
-        TempRegion = new Region
+        var newRegion = result.Data as Region;
+        if (newRegion != null && !string.IsNullOrEmpty(newRegion.Code) && !string.IsNullOrEmpty(newRegion.Name))
         {
-            Code = Region.Code,
-            Name = Region.Name,
-            ShortDescription = Region.ShortDescription,
-            Description = Region.Description,
-            Status = Region.Status
-        };
-
-        // Set selectedValue based on existing status
-        selectedValue = TempRegion.Status;
+            // Check if a region with the same code already exists
+            if (regions.Any(r => r.Code == newRegion.Code))
+            {
+                // Show error message or handle the duplicate code scenario
+                Console.WriteLine("A region with the same code already exists.");
+            }
+            else
+            {
+                // Add the new region if no duplicate code is found
+                RegionService.AddRegion(newRegion);
+                StateHasChanged();
+            }
+        }
     }
-    else
-    {
-        // Adding a new region, so initialize with default values
-        TempRegion = new Region();
-        
-        // Default status should be 'Active'
-        selectedValue = "Active";
-        TempRegion.Status = selectedValue;
-    }
-}
-
-private void Save()
-{
-    // Ensure TempRegion.Status is updated with the selected value
-    TempRegion.Status = selectedValue;
-
-    // Copy TempRegion's data back to Region
-    Region.Code = TempRegion.Code;
-    Region.Name = TempRegion.Name;
-    Region.ShortDescription = TempRegion.ShortDescription;
-    Region.Description = TempRegion.Description;
-    Region.Status = TempRegion.Status;
-
-    MudDialog.Close(DialogResult.Ok(Region));
 }
