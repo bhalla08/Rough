@@ -25,3 +25,6 @@ private async Task AddNewRegion()
         }
     }
 }
+
+
+              OnInput="@(e => TempRegion.Code = e.Value.ToString().ToUpper())" />
